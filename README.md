@@ -8,10 +8,9 @@ Ce dépôt regroupe les ressources, outils, modèles et documents de référence
 
 ## 📁 Contenu principal
 
-- `Analytique/` : espace de travail pour l'équipe analytique
-- `modeles/` : modèles Excel (DCF, comparables, etc.)
-- `recherches/` : notes sectorielles et études de marché
-- `outils/` : scripts Python ou R pour automatiser l’analyse
+- `analytique/` : espace de travail pour l'équipe Analytique et Développement
+- `allocation-actif/` : espace de travail pour l'équipe d'Allocation d'Actifs
+- `gestion-externe/` : espace de travail pour l'équipe de Gestion Externe
 
 ## 🤝 Contribution
 
