@@ -2,7 +2,7 @@
 
 Bienvenue sur le dépôt officiel du **Fonds BNI** destiné aux étudiants.
 
-## 📚 Objectif du dépôt
+## 📚 Objectif
 
 Ce dépôt regroupe les ressources, outils, modèles et documents de référence utilisés par le fonds.
 
