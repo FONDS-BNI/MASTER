@@ -1,5 +1,3 @@
-# performance_analysis/src/dividend_processor.py
-
 import pandas as pd
 
 class DividendProcessor:

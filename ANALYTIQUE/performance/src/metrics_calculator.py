@@ -1,5 +1,3 @@
-# performance_analysis/src/metrics_calculator.py
-
 import numpy as np
 
 class MetricsCalculator:

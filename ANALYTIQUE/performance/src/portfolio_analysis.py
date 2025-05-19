@@ -1,5 +1,3 @@
-# src/portfolio_analysis.py
-
 import pandas as pd
 import xlwings as xw
 import matplotlib.pyplot as plt
@@ -17,7 +15,7 @@ from .plotter               import Plotter
 from .metrics_calculator    import MetricsCalculator
 from .bni_fund              import funds_name
 
-# Excel / PPT paths
+# Excel PPT paths
 file_path_excel_pour_pp = PPT_INPUT
 file_path_output_pp     = PPT_OUTPUT
 

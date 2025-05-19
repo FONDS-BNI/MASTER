@@ -1,5 +1,3 @@
-# performance_analysis/src/transaction_processor.py
-
 import pandas as pd
 from pathlib import Path
 from .config import DATA_DIR, CONFIG

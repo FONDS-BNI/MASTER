@@ -1,5 +1,3 @@
-# performance_analysis/src/config.py
-
 import pandas as pd
 pd.options.display.float_format = '{:.4f}'.format
 

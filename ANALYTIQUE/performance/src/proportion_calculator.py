@@ -1,5 +1,3 @@
-# performance_analysis/src/proportion_calculator.py
-
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates

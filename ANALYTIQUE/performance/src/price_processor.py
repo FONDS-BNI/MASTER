@@ -1,5 +1,3 @@
-# performance_analysis/src/price_processor.py
-
 import pandas as pd
 from .config import DATA_DIR, CONFIG
 from .bni_fund import BNI_FUND, fund_dict

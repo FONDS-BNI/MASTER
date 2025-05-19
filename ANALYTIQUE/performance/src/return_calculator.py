@@ -1,5 +1,3 @@
-# performance_analysis/src/return_calculator.py
-
 import pandas as pd
 
 class ReturnCalculator:

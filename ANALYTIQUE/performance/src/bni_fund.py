@@ -1,5 +1,3 @@
-# performance_analysis/src/bni_fund.py
-
 import pandas as pd
 import requests
 
