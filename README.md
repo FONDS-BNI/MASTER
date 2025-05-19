@@ -8,9 +8,9 @@ Ce dépôt regroupe les ressources, outils, modèles et documents de référence
 
 ## 📁 Contenu principal
 
-- `analytique/` : espace de travail pour l'équipe Analytique et Développement
-- `allocation-actif/` : espace de travail pour l'équipe d'Allocation d'Actifs
-- `gestion-externe/` : espace de travail pour l'équipe de Gestion Externe
+- `ANALYTIQUE/` : espace de travail pour l'équipe Analytique et Développement
+- `ALLOCATION/` : espace de travail pour l'équipe d'Allocation d'Actifs
+- `GESTION-EXTERNE/` : espace de travail pour l'équipe de Gestion Externe
 
 ## 🤝 Contribution
 
