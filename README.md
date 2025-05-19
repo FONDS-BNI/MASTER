@@ -17,7 +17,7 @@ Ce dépôt regroupe les ressources, outils, modèles et documents de référence
 Les contributions sont les bienvenues ! Veuillez suivre ces étapes :
 1. Forker le dépôt
 2. Créer une branche (`feature/nom-fonctionnalité`)
-3. Soumettre une pull request claire et bien documentée
+3. Soumettre une pull request claire et bien documentée (via GitHub Desktop)
 
 ## 📌 Règles de collaboration
 
