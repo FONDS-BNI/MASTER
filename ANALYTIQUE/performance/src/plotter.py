@@ -85,4 +85,4 @@ class Plotter:
         save_path = OUTPUT_DIR / filename
         plt.savefig(save_path, dpi=300)
 
-        plt.show()  
+        #plt.show()  

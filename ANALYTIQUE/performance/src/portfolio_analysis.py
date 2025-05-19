@@ -110,8 +110,8 @@ class PortfolioAnalysis:
 
 
     def plot_metrics(self, weekly_fund_returns, window):
-        date_1 = pd.Timestamp('2025-02-06')
-        date_2 = pd.Timestamp('2025-03-06')
+        date_1 = pd.Timestamp('2025-02-06') ## ligne pour allocation tactique 06 février 2025 -> Tactique 2
+        date_2 = pd.Timestamp('2025-03-06') ## ligne pour allocaiton tactique 06 mars 2025    -> Tactique 1
         start_point = '2024-01-01'
         bench = weekly_fund_returns['Benchmark']
 
