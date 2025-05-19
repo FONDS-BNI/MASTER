@@ -1,0 +1,1 @@
+"voici le code de gestion externe"

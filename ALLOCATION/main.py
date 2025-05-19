@@ -1,0 +1,1 @@
+"voici le code d'allocation d'actif"
