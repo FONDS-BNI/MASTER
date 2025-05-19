@@ -36,6 +36,7 @@ Avant d’utiliser les scripts Python, créez un environnement virtuel et instal
 ```bash
 # Crée un environnement virtuel (Python 3.8+ recommandé)
 python -m venv venv
+python3 -m venv venv
 
 # Active l’environnement virtuel
 # Sur Windows :
