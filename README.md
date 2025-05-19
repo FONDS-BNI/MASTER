@@ -31,5 +31,25 @@ Pour toute question, veuillez contacter avec un membre du comité exécutif.
 
 ---
 
+## ⚙️ Installation de l’environnement Python
+
+Avant d’utiliser les scripts Python, créez un environnement virtuel et installez les dépendances :
+
+```bash
+# Crée un environnement virtuel (Python 3.8+ recommandé)
+python -m venv venv
+
+# Active l’environnement virtuel
+# Sur Windows :
+venv\Scripts\activate
+# Sur macOS/Linux :
+source venv/bin/activate
+
+# Installe les dépendances
+pip install -r requirements.txt
+```
+
+--
+
 Have fun!
 
