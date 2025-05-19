@@ -1,7 +1,6 @@
 import pandas as pd
-pd.options.display.float_format = '{:.4f}'.format
-
 from pathlib import Path
+pd.options.display.float_format = '{:.4f}'.format
 
 # ── Project Paths 
 PROJECT_ROOT = Path(__file__).parent.parent
