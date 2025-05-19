@@ -1,5 +1,3 @@
-# performance_analysis/src/market_value.py
-
 class MarketValueCalculator:
     @staticmethod
     def calculate_market_value(prices_df, quantities_df):
