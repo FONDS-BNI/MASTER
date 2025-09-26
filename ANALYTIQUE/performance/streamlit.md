@@ -16,7 +16,7 @@ Working with Streamlit is simple. First you sprinkle a few Streamlit commands in
 streamlit run streamlit_test.py [-- script args]
 ```
 
-Local URL: [http://localhost:8501](http://localhost:8501)__
+Local URL: [http://localhost:8501](http://localhost:8501) <br/>
 Network URL: [http://192.168.1.164:8501](http://192.168.1.164:8501)
 
 ## For better performance, install the Watchdog module:
