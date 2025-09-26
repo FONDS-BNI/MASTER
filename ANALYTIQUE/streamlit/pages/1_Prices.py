@@ -5,13 +5,14 @@ from datetime import date
 import plotly.express as px
 
 # --- Constants ---
-DATA_DIR = Path(__file__).parent.parent.parent / 'data'
-# print("DATA_DIR:", Path(__file__).parent)
-PRICES_FILE = DATA_DIR / 'prices.csv'
+DATA_DIR = Path(__file__).parent.parent.parent / 'performance/data'
 PRICES_PARQUET = DATA_DIR / 'prices.parquet'
 
 # --- Page Configuration ---
-st.set_page_config(page_title="Price Data Viewer", layout="wide")
+st.set_page_config(
+    page_title="Price Data Viewer", 
+    layout="wide"
+)
 
 # --- Data Loading ---
 @st.cache_data

@@ -12,10 +12,8 @@ CUSTOM_CSS = """
 <style>
     .main > div { padding-top: 1.5rem; }
     .hero {
-        background: linear-gradient(90deg,#0A2540,#133A63 60%,#1E578F);
         padding: 2.2rem 2.4rem;
         border-radius: 14px;
-        color: #fff;
         position: relative;
         overflow: hidden;
     }

@@ -30,7 +30,7 @@ streamlit hello
 
 ## Run This Project
 ```bash
-streamlit run /Users/pierolivierletourneau/Documents/GitHub/MASTER/ANALYTIQUE/performance/streamlit/Hello.py
+streamlit run /Users/pierolivierletourneau/Documents/GitHub/MASTER/ANALYTIQUE/streamlit/Hello.py
 # Pass arguments to your script after a -- separator, e.g.:
 streamlit run path/to/app.py -- --config config.yml
 ```

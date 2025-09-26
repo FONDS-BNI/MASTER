@@ -5,11 +5,14 @@ from datetime import date
 from functools import lru_cache
 
 # -------------------- Constants --------------------
-DATA_DIR = Path(__file__).parent.parent.parent / "data"
+DATA_DIR = Path(__file__).parent.parent.parent / "performance/data"
 TRANSACTION_FILE = DATA_DIR / "stock_final.xlsx"
 TICKERS = ['XBB.TO', 'XCB.TO', 'XEF.TO', 'XEM.TO', 'XHY.TO', 'XIG.TO', 'XIU.TO', 'XSB.TO', 'XUS.TO']
 
-st.set_page_config(page_title="Transactions & Holdings", layout="wide")
+st.set_page_config(
+    page_title="Transactions & Holdings", 
+    layout="wide"
+)
 
 # -------------------- Data Loading --------------------
 @st.cache_data(show_spinner=False)
