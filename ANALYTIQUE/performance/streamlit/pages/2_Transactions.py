@@ -1,127 +1,203 @@
 import streamlit as st
 import pandas as pd
 from pathlib import Path
-import pyarrow as pa
 from datetime import date
-import pyarrow.parquet as pq
-import plotly.express as px
+from functools import lru_cache
 
-# --- Constants ---
-DATA_DIR = Path(__file__).parent.parent.parent / 'data'
-# print("DATA_DIR:", Path(__file__).parent)
-TRANSACTION_FILE = DATA_DIR / 'stock_final.xlsx'
+# -------------------- Constants --------------------
+DATA_DIR = Path(__file__).parent.parent.parent / "data"
+TRANSACTION_FILE = DATA_DIR / "stock_final.xlsx"
+TICKERS = ['XBB.TO', 'XCB.TO', 'XEF.TO', 'XEM.TO', 'XHY.TO', 'XIG.TO', 'XIU.TO', 'XSB.TO', 'XUS.TO']
 
-# --- Page Configuration ---
-st.set_page_config(page_title="Price Data Viewer", layout="wide")
+st.set_page_config(page_title="Transactions & Holdings", layout="wide")
 
-# --- Data Loading ---
-@st.cache_data
-def load_data_transactions(file_path: Path) -> pd.DataFrame:
-    """
-    Load and preprocess transaction data from a CSV file.
-    The data is cached to improve performance.
-    """
-    if not file_path.exists():
-        st.error(f"Transaction data file not found: {file_path}")
+# -------------------- Data Loading --------------------
+@st.cache_data(show_spinner=False)
+def load_transactions(path: Path) -> pd.DataFrame:
+    if not path.exists():
         return pd.DataFrame()
-    
-    # Read only the first 4 columns from the 'Transactions' sheet
-    df = pd.read_excel(file_path, sheet_name="Transactions", usecols=range(5), index_col=0)
+    df = pd.read_excel(path, sheet_name="Transactions", usecols=range(5), index_col=0)
+    df.index = pd.to_datetime(df.index).tz_localize(None)
     if 'Date' in df.columns:
-        df['Date'] = pd.to_datetime(df['Date'])
+        df['Date'] = pd.to_datetime(df['Date']).dt.tz_localize(None)
+    if {'Quantity', 'Price'}.issubset(df.columns):
+        df['Value'] = df['Quantity'] * df['Price']
+    return df.sort_index()
 
-    df['Value'] = df['Quantity'] * df['Price']
+@st.cache_data(show_spinner=False)
+def get_trading_days(start: pd.Timestamp, end: pd.Timestamp) -> pd.DatetimeIndex:
+    return pd.bdate_range(start=start.normalize(), end=end.normalize())
 
-    return df
+# -------------------- Split Loader --------------------
+@st.cache_data(ttl=3600, show_spinner=False)
+def load_splits(tickers: list[str]) -> pd.DataFrame:
+    try:
+        from yahoo_api import YahooAPI
+        raw = YahooAPI().get_yahoo_data(tickers, metric=['splits'])
+    except Exception:
+        return pd.DataFrame()
+    if raw is None or raw.empty:
+        return pd.DataFrame()
+    if isinstance(raw.columns, pd.MultiIndex):
+        raw.columns = raw.columns.get_level_values(0)
+    events = []
+    for ticker in raw.columns:
+        s = raw[ticker].dropna()
+        changed = s[(s != 1) & (s.ne(s.shift()))]
+        if not changed.empty:
+            events.append(pd.DataFrame({'Ticker': ticker, 'SplitFactor': changed.values}, index=changed.index))
+    return pd.concat(events).sort_index() if events else pd.DataFrame()
 
-# --- Sidebar Components ---
-def build_sidebar(df: pd.DataFrame) -> dict:
-    """
-    Builds sidebar controls for date range, tickers, frequency, and display options.
-    Returns a dict of filter settings.
-    """
-    st.sidebar.header("Filter controls")
+# -------------------- Holdings Builder (optimized) --------------------
+@st.cache_data(show_spinner=False)
+def _pre_aggregate(df: pd.DataFrame) -> pd.DataFrame:
+    # Aggregate all transactions to daily net quantity per ticker
+    g = (df.groupby([df.index.date, 'Ticker'])['Quantity']
+           .sum()
+           .unstack(fill_value=0.0))
+    g.index = pd.to_datetime(g.index)
+    return g.sort_index()
+
+@st.cache_data(show_spinner=False)
+def build_holdings(df: pd.DataFrame,
+                   start: pd.Timestamp,
+                   end: pd.Timestamp,
+                   fund: str) -> pd.DataFrame:
+    if df.empty:
+        return pd.DataFrame()
+
+    if fund == "Strategic":
+        work = df[df['Type'] == 'Strategic']
+    elif fund == "Tactic":
+        work = df[df['Type'] == 'Tactic']
+    else:
+        work = df
+
+    if work.empty or not {'Ticker', 'Quantity'}.issubset(work.columns):
+        return pd.DataFrame()
+
+    grouped = _pre_aggregate(work)
+    first_date = grouped.index.min().normalize()
+    trading_days = get_trading_days(first_date, end)
+    grouped = grouped.reindex(trading_days, fill_value=0.0)
+    holdings_full = grouped.cumsum()
+    out = holdings_full.loc[start:end]
+
+    return out
+
+# -------------------- Sidebar / Filters --------------------
+def sidebar_filters(df: pd.DataFrame) -> dict:
+    st.sidebar.header("Filters")
+    if df.empty:
+        return {}
+    min_date = df.index.min().date()
+    max_date = df.index.max().date()
 
     with st.sidebar.container(border=True):
-        if df.empty:
-            st.warning("No data available to build filters.")
-            return {}
+        mode = st.radio(
+            "Date range",
+            ["All", "YTD", "1Y", "3Y", "5Y", "Custom"],
+            index=5
+        )
 
-        min_date, max_date = df.index.min().date(), df.index.max().date()
-
-        # Allow user to choose how to define the date range
-        mode = st.radio("Date range selection", ["All", "YTD", "1 Year", "3 Years", "5 Years", "Custom"], index=5)
-        
-        # Manual mode always shows a date range picker
-        manual_range = st.date_input(
-            "Choose a date range",
+        manual = st.date_input(
+            "Custom range",
             value=[min_date, max_date],
             min_value=min_date,
-            max_value=max_date,
+            max_value=max_date
         )
-        
-        if mode == "Custom":
-            if len(manual_range) == 2:
-                start_date, end_date = manual_range
-            else:
-                start_date, end_date = min_date, max_date
-        elif mode == "YTD":
-            start_date, end_date = date(max_date.year, 1, 1), max_date
-        elif mode == "1 Year":
-            start_candidate = (pd.Timestamp(max_date) - pd.DateOffset(years=1)).date()
-            start_date, end_date = max(start_candidate, min_date), max_date
-        elif mode == "3 Years":
-            start_candidate = (pd.Timestamp(max_date) - pd.DateOffset(year=3)).date()
-            start_date, end_date = max(start_candidate, min_date), max_date
-        elif mode == "5 Years":
-            start_candidate = (pd.Timestamp(max_date) - pd.DateOffset(years=5)).date()
-            start_date, end_date = max(start_candidate, min_date), max_date
-        elif mode == "All":
+
+    if mode == "All":
+        start_date, end_date = min_date, max_date
+    elif mode == "YTD":
+        start_date, end_date = date(max_date.year, 1, 1), max_date
+    elif mode == "1Y":
+        start_candidate = (pd.Timestamp(max_date) - pd.DateOffset(years=1)).date()
+        start_date, end_date = max(start_candidate, min_date), max_date
+    elif mode == "3Y":
+        start_candidate = (pd.Timestamp(max_date) - pd.DateOffset(years=3)).date()
+        start_date, end_date = max(start_candidate, min_date), max_date
+    elif mode == "5Y":
+        start_candidate = (pd.Timestamp(max_date) - pd.DateOffset(years=5)).date()
+        start_date, end_date = max(start_candidate, min_date), max_date
+    else:
+        if len(manual) == 2:
+            start_date, end_date = manual
+        else:
             start_date, end_date = min_date, max_date
 
-    # Ensure ordering
     if start_date > end_date:
         start_date, end_date = end_date, start_date
 
-    if df.empty:
-            st.info("No transaction data to display.")
-            return
-    
     with st.sidebar.container(border=True):
-        mode = st.radio("Fund Selection", ["Global", "Strategic", "Tactic"], index=0)
-        
+        fund = st.radio("Fund", ["Global", "Strategic", "Tactic"])
+
     return {
-        "start_date": start_date,
-        "end_date": end_date,
-        "fund": mode,
+        "start": pd.to_datetime(start_date),
+        "end": pd.to_datetime(end_date),
+        "fund": fund
     }
 
-# --- Display Transactions ---
-def display_transactions(df: pd.DataFrame, filters: dict) -> None:
-    st.title("Transaction Viewer")
+# -------------------- Small Helpers --------------------
+def _fund_filter(df: pd.DataFrame, fund: str) -> pd.DataFrame:
+    if fund == "Strategic":
+        return df[df['Type'] == 'Strategic']
+    if fund == "Tactic":
+        return df[df['Type'] == 'Tactic']
+    return df
 
-    start, end = pd.to_datetime(filters["start_date"]), pd.to_datetime(filters["end_date"])
-    filtered_df = df.loc[start:end]
+# -------------------- Display --------------------
+def render_page(df: pd.DataFrame, f: dict):
+    start, end, fund = f["start"], f["end"], f["fund"]
+    tx = _fund_filter(df, fund)
+    tx = tx.loc[(tx.index >= start) & (tx.index <= end)].copy()
 
-    if filters["fund"] == "Global":
-        filtered_df = filtered_df
-    elif filters["fund"] == "Strategic":
-        filtered_df = filtered_df[filtered_df['Type'] == 'Strategic']
-    elif filters["fund"] == "Tactic":
-        filtered_df = filtered_df[filtered_df['Type'] == 'Tactic']
-
-    st.subheader(f"Showing data from {start.date()} to {end.date()}")
-    st.write(f"Rows: {len(filtered_df)} — Columns: {len(filtered_df.columns)}")
+    st.title(f"{fund} Fund Overview")
+    st.caption(f"Date range: {start.date()} → {end.date()}")
     
-    st.dataframe(filtered_df)
+    tabs = st.tabs(["Transactions", "Holdings", "Splits"])
+    # Transactions
+    with tabs[0]:
+        st.caption(f"Rows: {len(tx)} — Columns: {len(tx.columns)}")
+        st.dataframe(tx, use_container_width=True, height=500)
+        
+    # Holdings
+    with tabs[1]:
+        holdings = build_holdings(df, start, end, fund)
+        st.caption(f"Rows: {len(holdings)} — Columns: {len(holdings.columns)}")
+        st.dataframe(holdings, use_container_width=True, height=500)
 
-# --- Main App Logic ---
+    # Splits
+    with tabs[2]:
+        splits = load_splits(TICKERS)
+        if splits.empty:
+            st.info("No split data available.")
+        else:
+            s_filtered = splits.loc[(splits.index >= start) & (splits.index <= end)]
+            if s_filtered.empty:
+                st.info("No splits in selected range.")
+            else:
+                st.caption(f"Rows: {len(s_filtered)} — Columns: {len(s_filtered.columns)}")
+                st.dataframe(s_filtered, use_container_width=True)
+
+# -------------------- Main --------------------
 def main():
-    transaction_data = load_data_transactions(TRANSACTION_FILE)
+    df = load_transactions(TRANSACTION_FILE)
+    if df.empty:
+        st.error("No transaction data found.")
+        return
+    filters = sidebar_filters(df)
+    if not filters:
+        return
+    render_page(df, filters)
 
-    if not transaction_data.empty:
-        filters = build_sidebar(transaction_data)
-        display_transactions(transaction_data, filters)
+    # Minimal custom styling
+    st.markdown("""
+    <style>
+    section[data-testid="stSidebar"] {width: 330px !important;}
+    .stMetric label {font-size:0.75rem;}
+    </style>
+    """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()

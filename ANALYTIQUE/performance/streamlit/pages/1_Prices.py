@@ -1,9 +1,7 @@
 import streamlit as st
 import pandas as pd
 from pathlib import Path
-import pyarrow as pa
 from datetime import date
-import pyarrow.parquet as pq
 import plotly.express as px
 
 # --- Constants ---
@@ -17,25 +15,9 @@ st.set_page_config(page_title="Price Data Viewer", layout="wide")
 
 # --- Data Loading ---
 @st.cache_data
-# def load_data(file_path: Path) -> pd.DataFrame:
-#     """
-#     Load and preprocess price data from a CSV file.
-#     The data is cached to improve performance.
-#     """
-#     if not file_path.exists():
-#         st.error(f"Data file not found: {file_path}")
-#         return pd.DataFrame()
-    
-#     df = pd.read_csv(file_path, index_col=0, parse_dates=True)
-#     df = df.loc['2019-01-01':].dropna(how="all")
-#     table = pa.Table.from_pandas(df)
-#     pq.write_table(table, DATA_DIR / 'prices.parquet')
-
-#     return table
-
 def load_parquet_data(file_path: Path) -> pd.DataFrame:
     """
-    Load and preprocess price data from a CSV file.
+    Load and preprocess price data from a Parquet file.
     The data is cached to improve performance.
     """
     if not file_path.exists():
@@ -160,18 +142,21 @@ def display_main_content(df: pd.DataFrame, filters: dict) -> None:
     elif filters["data_option"] == "Returns (Cummulative)":
         filtered = filtered.pct_change().dropna(how="all").cumsum() * 100
 
-    st.subheader(f"Showing data from {start.date()} to {end.date()}")
-    st.write(f"Rows: {len(filtered)} — Columns: {len(filtered.columns)}")
+    st.caption(f"Date range: {start.date()} → {end.date()}")
 
-    tab1, tab2 = st.tabs(["Data Table", "Line Chart"])
-    tab1.dataframe(filtered, use_container_width=True)
+    tabs = st.tabs(["Data Table", "Line Chart"])
 
-    if filtered.empty:
-        tab2.info("No data to display. Adjust filters or select tickers.")
-    else:
-        fig = px.line(filtered, title="Price Data Over Time")
-        tab2.plotly_chart(fig, use_container_width=True)
+    with tabs[0]:
+        st.caption(f"Rows: {len(filtered)} — Columns: {len(filtered.columns)}")
+        st.dataframe(filtered, use_container_width=True)
 
+    with tabs[1]:
+        if filtered.empty:
+            st.info("No data to display. Adjust filters or select tickers.")
+        else:
+            fig = px.line(filtered, title="Price Data Over Time")
+            st.plotly_chart(fig, use_container_width=True)
+    
 # --- Main App Logic ---
 def main():
     price_data = load_parquet_data(PRICES_PARQUET)
