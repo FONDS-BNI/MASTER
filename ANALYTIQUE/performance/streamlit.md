@@ -1,6 +1,6 @@
 # Streamlit Setup
 
-Documentation [https://docs.streamlit.io/]
+Documentation [https://docs.streamlit.io/](https://docs.streamlit.io/)
 
 
 To set up your Python environment and test your installation, execute the following terminal commands:
@@ -16,4 +16,4 @@ Working with Streamlit is simple. First you sprinkle a few Streamlit commands in
 streamlit run streamlit_test.py [-- script args]
 ```
 
-Local URL: [http://localhost:8501]
+Local URL: [http://localhost:8501](http://localhost:8501)
