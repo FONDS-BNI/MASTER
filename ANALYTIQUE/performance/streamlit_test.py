@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from pathlib import Path
 import pyarrow as pa
+from datetime import date
 import pyarrow.parquet as pq
 import plotly.express as px
 
@@ -53,20 +54,46 @@ def build_sidebar(df: pd.DataFrame) -> dict:
     """
     st.sidebar.header("Filter controls")
 
-    if df.empty:
-        st.sidebar.warning("No data available to build filters.")
-        return {}
+    with st.sidebar.container(border=True):
+        if df.empty:
+            st.warning("No data available to build filters.")
+            return {}
 
-    min_date, max_date = df.index.min().date(), df.index.max().date()
+        min_date, max_date = df.index.min().date(), df.index.max().date()
 
-    # Date range selection
-    date_range = st.sidebar.date_input(
-        "Date range",
-        value=[min_date, max_date],
-        min_value=min_date,
-        max_value=max_date,
-    )
-    start_date, end_date = date_range if len(date_range) == 2 else (min_date, max_date)
+        # Allow user to choose how to define the date range
+        mode = st.radio("Date range selection", ["All", "YTD", "1 Year", "3 Years", "5 Years", "Custom"], index=5)
+        
+        # Manual mode always shows a date range picker
+        manual_range = st.date_input(
+            "Choose a date range",
+            value=[min_date, max_date],
+            min_value=min_date,
+            max_value=max_date,
+        )
+        
+        if mode == "Custom":
+            if len(manual_range) == 2:
+                start_date, end_date = manual_range
+            else:
+                start_date, end_date = min_date, max_date
+        elif mode == "YTD":
+            start_date, end_date = date(max_date.year, 1, 1), max_date
+        elif mode == "1 Year":
+            start_candidate = (pd.Timestamp(max_date) - pd.DateOffset(years=1)).date()
+            start_date, end_date = max(start_candidate, min_date), max_date
+        elif mode == "3 Years":
+            start_candidate = (pd.Timestamp(max_date) - pd.DateOffset(year=3)).date()
+            start_date, end_date = max(start_candidate, min_date), max_date
+        elif mode == "5 Years":
+            start_candidate = (pd.Timestamp(max_date) - pd.DateOffset(years=5)).date()
+            start_date, end_date = max(start_candidate, min_date), max_date
+        elif mode == "All":
+            start_date, end_date = min_date, max_date
+
+    # Ensure ordering
+    if start_date > end_date:
+        start_date, end_date = end_date, start_date
 
     # Tickers selection with scrollable checkboxes
     all_tickers = list(df.columns)
@@ -74,15 +101,6 @@ def build_sidebar(df: pd.DataFrame) -> dict:
         st.session_state.selected_tickers = all_tickers.copy()
 
     with st.sidebar.expander("Tickers to show", expanded=True):
-        # # Select all / Clear all buttons
-        # col1, col2 = st.columns([1, 1])
-        # with col1:
-        #     if st.button("Select all"):
-        #         st.session_state.selected_tickers = all_tickers.copy()
-        # with col2:
-        #     if st.button("Clear all"):
-        #         st.session_state.selected_tickers = []
-
         # Scrollable checkbox list
         new_selection = []
         for ticker in all_tickers:
@@ -98,7 +116,7 @@ def build_sidebar(df: pd.DataFrame) -> dict:
 
     # Data display options
     data_option = st.sidebar.radio(
-        "Data options", ("Prices", "Absolute Returns", "Relative Returns")
+        "Data options", ("Prices", "Returns", "Returns (Cummulative)")
     )
 
     return {
@@ -114,7 +132,7 @@ def display_main_content(df: pd.DataFrame, filters: dict) -> None:
     """
     Display filtered data table and line chart.
     """
-    st.title("Price Data Viewer")
+    st.title("Data Viewer")
 
     if df.empty or not filters:
         st.info("No data to display. Adjust filters or load data.")
@@ -134,9 +152,9 @@ def display_main_content(df: pd.DataFrame, filters: dict) -> None:
         filtered = pd.DataFrame()
 
     # Compute returns if requested
-    if filters["data_option"] == "Absolute Returns":
+    if filters["data_option"] == "Returns":
         filtered = filtered.pct_change().dropna(how="all") * 100
-    elif filters["data_option"] == "Relative Returns":
+    elif filters["data_option"] == "Returns (Cummulative)":
         filtered = filtered.pct_change().dropna(how="all").cumsum() * 100
 
     st.subheader(f"Showing data from {start.date()} to {end.date()}")
