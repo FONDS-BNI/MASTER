@@ -11,9 +11,8 @@ streamlit hello
 
 Working with Streamlit is simple. First you sprinkle a few Streamlit commands into a normal Python script, then you run it with streamlit run:
 ```bash
-streamlit run streamlit_test.py [-- script args]
+streamlit run /Users/pierolivierletourneau/Documents/GitHub/MASTER/ANALYTIQUE/performance/streamlit_test.py [-- script args]
 ```
-\
 
 Local URL: [http://localhost:8501](http://localhost:8501)\
 Network URL: [http://192.168.1.164:8501](http://192.168.1.164:8501)
