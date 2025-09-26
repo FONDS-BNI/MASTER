@@ -7,7 +7,8 @@ import pyarrow.parquet as pq
 import plotly.express as px
 
 # --- Constants ---
-DATA_DIR = Path(__file__).parent / 'data'
+DATA_DIR = Path(__file__).parent.parent.parent / 'data'
+# print("DATA_DIR:", Path(__file__).parent)
 PRICES_FILE = DATA_DIR / 'prices.csv'
 PRICES_PARQUET = DATA_DIR / 'prices.parquet'
 
@@ -110,14 +111,16 @@ def build_sidebar(df: pd.DataFrame) -> dict:
         st.session_state.selected_tickers = new_selection
 
     # Resampling frequency
-    freq = st.sidebar.selectbox(
-        "Resample frequency", ["D", "W", "M"], index=0, help="Select data resampling frequency."
-    )
+    with st.sidebar.container(border=True):
+        freq = st.selectbox(
+            "Resample frequency", ["D", "W", "M"], index=0, help="Select data resampling frequency."
+        )
 
     # Data display options
-    data_option = st.sidebar.radio(
-        "Data options", ("Prices", "Returns", "Returns (Cummulative)")
-    )
+    with st.sidebar.container(border=True):
+        data_option = st.radio(
+            "Data options", ("Prices", "Returns", "Returns (Cummulative)")
+        )
 
     return {
         "start_date": start_date,
@@ -169,11 +172,10 @@ def display_main_content(df: pd.DataFrame, filters: dict) -> None:
         fig = px.line(filtered, title="Price Data Over Time")
         tab2.plotly_chart(fig, use_container_width=True)
 
-
 # --- Main App Logic ---
 def main():
     price_data = load_parquet_data(PRICES_PARQUET)
-    
+
     if not price_data.empty:
         filters = build_sidebar(price_data)
         display_main_content(price_data, filters)
