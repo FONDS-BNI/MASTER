@@ -100,3 +100,16 @@ pip freeze > requirements.txt
 ## Reference
 Docs: https://docs.streamlit.io/
 Component Gallery: https://streamlit.io/components
+
+
+# Here's hwo to get the data above for blackrock_api.py
+1. Go to https://www.blackrock.com/ca.
+2. Search for an ETF (e.g., XIU).
+3. Right click anywhere on the ETF page and select "Inspect" to open developer tools.
+4. In the developer tools, go to the "Network" tab.
+5. May need to refresh the page (F5 or Ctrl+R).
+6. In the "Network" tab, look for requests that contain "ajax" in the "Name" column.
+7. Click on one of these requests to see its details, including the URL path fragment in "Headers".
+8. Copy the path fragment which is the part after /products/ and before the numeric ID (e.g., 1464253357814).
+
+
