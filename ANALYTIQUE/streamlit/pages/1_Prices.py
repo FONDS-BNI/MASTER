@@ -1,12 +1,10 @@
 import streamlit as st
 import pandas as pd
-from pathlib import Path
-from datetime import date
 import plotly.express as px
+from datetime import date
 
-# --- Constants ---
-DATA_DIR = Path(__file__).parent.parent.parent / 'performance/data'
-PRICES_PARQUET = DATA_DIR / 'prices.parquet'
+import config 
+from utils.loaders.load_raw_prices import load_parquet_data
 
 # --- Page Configuration ---
 st.set_page_config(
@@ -14,29 +12,13 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- Data Loading ---
-@st.cache_data
-def load_parquet_data(file_path: Path) -> pd.DataFrame:
-    """
-    Load and preprocess price data from a Parquet file.
-    The data is cached to improve performance.
-    """
-    if not file_path.exists():
-        st.error(f"Data file not found: {file_path}")
-        return pd.DataFrame()
-    
-    df = pd.read_parquet(file_path)
-    df = df.loc['2019-01-01':].dropna(how="all")
-
-    return df
-
 # --- Sidebar Components ---
 def build_sidebar(df: pd.DataFrame) -> dict:
     """
     Builds sidebar controls for date range, tickers, frequency, and display options.
     Returns a dict of filter settings.
     """
-    st.sidebar.header("Filter controls")
+    st.sidebar.header("Filters")
 
     with st.sidebar.container(border=True):
         if df.empty:
@@ -46,7 +28,7 @@ def build_sidebar(df: pd.DataFrame) -> dict:
         min_date, max_date = df.index.min().date(), df.index.max().date()
 
         # Allow user to choose how to define the date range
-        mode = st.radio("Date range selection", ["All", "YTD", "1 Year", "3 Years", "5 Years", "Custom"], index=5)
+        mode = st.radio("Date range selection", ["All", "YTD", "1Y", "3Y", "5Y", "Custom"], index=5)
         
         # Manual mode always shows a date range picker
         manual_range = st.date_input(
@@ -63,13 +45,13 @@ def build_sidebar(df: pd.DataFrame) -> dict:
                 start_date, end_date = min_date, max_date
         elif mode == "YTD":
             start_date, end_date = date(max_date.year, 1, 1), max_date
-        elif mode == "1 Year":
+        elif mode == "1Y":
             start_candidate = (pd.Timestamp(max_date) - pd.DateOffset(years=1)).date()
             start_date, end_date = max(start_candidate, min_date), max_date
-        elif mode == "3 Years":
+        elif mode == "3Y":
             start_candidate = (pd.Timestamp(max_date) - pd.DateOffset(year=3)).date()
             start_date, end_date = max(start_candidate, min_date), max_date
-        elif mode == "5 Years":
+        elif mode == "5Y":
             start_candidate = (pd.Timestamp(max_date) - pd.DateOffset(years=5)).date()
             start_date, end_date = max(start_candidate, min_date), max_date
         elif mode == "All":
@@ -160,7 +142,7 @@ def display_main_content(df: pd.DataFrame, filters: dict) -> None:
     
 # --- Main App Logic ---
 def main():
-    price_data = load_parquet_data(PRICES_PARQUET)
+    price_data = load_parquet_data(config.PRICES_PARQUET)
 
     if not price_data.empty:
         filters = build_sidebar(price_data)

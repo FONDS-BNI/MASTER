@@ -113,3 +113,9 @@ Component Gallery: https://streamlit.io/components
 8. Copy the path fragment which is the part after /products/ and before the numeric ID (e.g., 1464253357814).
 
 
+# TO DO
+- use data in Parquet file (Query with DuckDB or Polars)
+- only use columns needed
+- database -> SQLite
+- performance
+- *clean code
